@@ -1,0 +1,13 @@
+com/example/rest/generated/BooksApi.java
+com/example/rest/generated/CategoriesApi.java
+com/example/rest/generated/UsersApi.java
+com/example/rest/generated/model/Book.java
+com/example/rest/generated/model/BookList.java
+com/example/rest/generated/model/Category.java
+com/example/rest/generated/model/CategoryList.java
+com/example/rest/generated/model/RentBookRequest.java
+com/example/rest/generated/model/RentBookResponse.java
+com/example/rest/generated/model/ReturnBookRequest.java
+com/example/rest/generated/model/ReturnBookResponse.java
+com/example/rest/generated/model/User.java
+com/example/rest/generated/model/UserList.java
