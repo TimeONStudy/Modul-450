@@ -20,10 +20,9 @@ jobs:
           cache: 'gradle'
 
       - name: Make gradlew executable
-        run: chmod +x ./M450_LB1/gradlew
+        run: chmod +x ./gradlew
 
       - name: Run unit tests
-        working-directory: ./M450_LB1
         run: ./gradlew test --info --stacktrace
 
       - name: Upload test reports
@@ -32,5 +31,5 @@ jobs:
         with:
           name: junit-reports
           path: |
-            M450_LB1/build/test-results/test
-            M450_LB1/build/reports/tests/test
+            build/test-results/test
+            build/reports/tests/test
