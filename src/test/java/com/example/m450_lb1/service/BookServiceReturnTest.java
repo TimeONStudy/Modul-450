@@ -91,7 +91,6 @@ class BookServiceReturnTest {
 	@Test
 	void returnBook_UserNotAuthenticated_Throws() {
 		user.setAuthenticatedUser(false);
-		when(bookRepository.findBookByName("The Hobbit")).thenReturn(Optional.of(book));
 		assertThrows(UnauthorizedUserException.class,
 				() -> bookService.returnBook("The Hobbit", user));
 	}

@@ -76,7 +76,6 @@ public class BookServiceTest {
     @Test
     void rentBook_ShouldThrow_WhenUserIsNotAuthenticated() {
         user.setAuthenticatedUser(false);
-        when(bookRepository.findBookByName("The Hobbit")).thenReturn(Optional.of(book));
 
         assertThrows(UnauthorizedUserException.class, () -> bookService.rentBook("The Hobbit", user));
     }
