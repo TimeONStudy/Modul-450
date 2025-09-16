@@ -22,7 +22,7 @@ import jakarta.annotation.Generated;
  */
 @lombok.Data @lombok.AllArgsConstructor @lombok.Builder
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-09-10T14:14:03.624390+02:00[Europe/Zurich]", comments = "Generator version: 7.7.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-09-16T14:02:32.543262+02:00[Europe/Zurich]", comments = "Generator version: 7.7.0")
 public class RentBookResponse {
 
   private Boolean success;
