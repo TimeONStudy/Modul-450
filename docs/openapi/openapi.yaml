@@ -1,0 +1,340 @@
+openapi: 3.0.0
+info:
+  title: Modul450 Library API
+  description: Simple library management system for renting books
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api
+    description: Local development server
+
+paths:
+  /books:
+    get:
+      tags:
+        - Books
+      operationId: getBooks
+      summary: Retrieves all books
+      description: Get a list of all books in the library
+      responses:
+        '200':
+          description: List of all books
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookList'
+
+  /books/{bookId}:
+    get:
+      tags:
+        - Books
+      operationId: getBookById
+      summary: Get a specific book by ID
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the book to retrieve
+      responses:
+        '200':
+          description: Book details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '404':
+          description: Book not found
+
+  /books/rent:
+    post:
+      tags:
+        - Books
+      operationId: rentBook
+      summary: Rent a book
+      description: Rent an available book to a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RentBookRequest'
+      responses:
+        '200':
+          description: Book successfully rented
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RentBookResponse'
+        '400':
+          description: Book not available or invalid request
+        '404':
+          description: Book or user not found
+
+  /books/return:
+    post:
+      tags:
+        - Books
+      operationId: returnBook
+      summary: Return a rented book
+      description: Return a book that was previously rented
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReturnBookRequest'
+      responses:
+        '200':
+          description: Book successfully returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReturnBookResponse'
+        '400':
+          description: Book was not rented or invalid request
+        '404':
+          description: Book not found
+
+  /categories:
+    get:
+      tags:
+        - Categories
+      operationId: getCategories
+      summary: Get all book categories
+      description: Retrieve a list of all book categories
+      responses:
+        '200':
+          description: List of all categories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryList'
+
+  /categories/{categoryId}/books:
+    get:
+      tags:
+        - Categories
+      operationId: getBooksByCategory
+      summary: Get books by category
+      description: Retrieve all books in a specific category
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the category
+      responses:
+        '200':
+          description: List of books in the category
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookList'
+        '404':
+          description: Category not found
+
+  /users:
+    get:
+      tags:
+        - Users
+      operationId: getUsers
+      summary: Get all users
+      description: Retrieve a list of all users
+      responses:
+        '200':
+          description: List of all users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserList'
+
+  /users/{userId}:
+    get:
+      tags:
+        - Users
+      operationId: getUserById
+      summary: Get a specific user by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the user to retrieve
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+
+  /users/{userId}/rented-books:
+    get:
+      tags:
+        - Users
+      operationId: getUserRentedBooks
+      summary: Get books rented by a user
+      description: Retrieve all books currently rented by a specific user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the user
+      responses:
+        '200':
+          description: List of books rented by the user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookList'
+        '404':
+          description: User not found
+
+components:
+  schemas:
+    BookList:
+      type: object
+      properties:
+        books:
+          type: array
+          items:
+            $ref: '#/components/schemas/Book'
+      required: [books]
+
+    Book:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the book
+        name:
+          type: string
+          description: Title of the book
+        author:
+          type: string
+          description: Author of the book
+        category:
+          $ref: '#/components/schemas/Category'
+        available:
+          type: boolean
+          description: Whether the book is available for rent
+        rentedBy:
+          type: string
+          nullable: true
+          description: ID of the user who rented the book (null if available)
+        rentedDate:
+          type: string
+          format: date-time
+          nullable: true
+          description: Date when the book was rented (null if available)
+      required: [id, name, author, category, available]
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the category
+        name:
+          type: string
+          description: Name of the category
+      required: [id, name]
+
+    CategoryList:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+      required: [categories]
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the user
+        name:
+          type: string
+          description: Full name of the user
+        email:
+          type: string
+          format: email
+          description: Email address of the user
+        authenticated:
+          type: boolean
+          description: Whether the user is authenticated
+      required: [id, name, email, authenticated]
+
+    UserList:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+      required: [users]
+
+    RentBookRequest:
+      type: object
+      properties:
+        bookId:
+          type: string
+          description: ID of the book to rent
+        userId:
+          type: string
+          description: ID of the user renting the book
+      required: [bookId, userId]
+
+    RentBookResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Whether the rental was successful
+        message:
+          type: string
+          description: Success or error message
+        book:
+          $ref: '#/components/schemas/Book'
+        rentedDate:
+          type: string
+          format: date-time
+          description: Date and time when the book was rented
+      required: [success, message]
+
+    ReturnBookRequest:
+      type: object
+      properties:
+        bookId:
+          type: string
+          description: ID of the book to return
+        userId:
+          type: string
+          description: ID of the user returning the book
+      required: [bookId, userId]
+
+    ReturnBookResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Whether the return was successful
+        message:
+          type: string
+          description: Success or error message
+        book:
+          $ref: '#/components/schemas/Book'
+        returnedDate:
+          type: string
+          format: date-time
+          description: Date and time when the book was returned
+      required: [success, message]
