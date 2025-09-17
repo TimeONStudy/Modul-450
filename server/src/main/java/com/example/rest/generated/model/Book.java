@@ -9,6 +9,7 @@ import java.time.OffsetDateTime;
 import java.util.Arrays;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.lang.Nullable;
 import java.util.NoSuchElementException;
 import org.openapitools.jackson.nullable.JsonNullable;
 import java.time.OffsetDateTime;
@@ -25,7 +26,7 @@ import jakarta.annotation.Generated;
  */
 @lombok.Data @lombok.AllArgsConstructor @lombok.Builder
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-09-16T14:02:32.543262+02:00[Europe/Zurich]", comments = "Generator version: 7.7.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-09-17T02:08:17.903777955+02:00[Europe/Zurich]", comments = "Generator version: 7.12.0")
 public class Book {
 
   private String id;

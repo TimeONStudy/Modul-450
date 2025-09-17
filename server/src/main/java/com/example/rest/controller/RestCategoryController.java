@@ -10,6 +10,8 @@ import com.example.service.BookService;
 import com.example.service.CategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -23,7 +25,8 @@ public class RestCategoryController implements CategoriesApi {
 	private final BookService bookService;
 
 	@Override
-	public ResponseEntity<BookList> getBooksByCategory(String categoryId) {
+    @GetMapping("/getBooksByCategory/{categoryId}")
+	public ResponseEntity<BookList> getBooksByCategory(@PathVariable String categoryId) {
 		List<com.example.data.model.entity.Book> books = bookService.getBooksByCategory(categoryId);
 		List<Book> restBooks = books.stream()
 				.map(BookMapper::toRest)
@@ -36,6 +39,7 @@ public class RestCategoryController implements CategoriesApi {
 	}
 
 	@Override
+    @GetMapping("/getCategories")
 	public ResponseEntity<CategoryList> getCategories() {
 		List<com.example.data.model.entity.Category> categories = categoryService.getAllCategories();
 		List<com.example.rest.generated.model.Category> restCategories = categories.stream()

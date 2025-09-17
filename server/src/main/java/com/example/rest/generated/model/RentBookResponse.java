@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import java.time.OffsetDateTime;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.lang.Nullable;
 import org.openapitools.jackson.nullable.JsonNullable;
 import java.time.OffsetDateTime;
 import jakarta.validation.Valid;
@@ -22,17 +23,17 @@ import jakarta.annotation.Generated;
  */
 @lombok.Data @lombok.AllArgsConstructor @lombok.Builder
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-09-16T14:02:32.543262+02:00[Europe/Zurich]", comments = "Generator version: 7.7.0")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-09-17T02:08:17.903777955+02:00[Europe/Zurich]", comments = "Generator version: 7.12.0")
 public class RentBookResponse {
 
   private Boolean success;
 
   private String message;
 
-  private Book book;
+  private @Nullable Book book;
 
   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-  private OffsetDateTime rentedDate;
+  private @Nullable OffsetDateTime rentedDate;
 
   public RentBookResponse() {
     super();

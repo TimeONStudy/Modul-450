@@ -10,9 +10,9 @@ import com.example.rest.generated.model.ReturnBookRequest;
 import com.example.rest.generated.model.ReturnBookResponse;
 import com.example.service.BookService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.ZoneOffset;
 import java.util.List;
@@ -24,12 +24,14 @@ public class RestBookController implements BooksApi {
 	private final BookService bookService;
 
 	@Override
-	public ResponseEntity<Book> getBookById(String bookId) {
+    @GetMapping("/getBookById/{bookId}")
+	public ResponseEntity<Book> getBookById(@PathVariable String bookId) {
 		com.example.data.model.entity.Book book = bookService.getBookById(bookId);
 		return ResponseEntity.ok(BookMapper.toRest(book));
 	}
 
 	@Override
+    @GetMapping("/getBooks")
 	public ResponseEntity<BookList> getBooks() {
 		List<com.example.data.model.entity.Book> books = bookService.getAllBooks();
 		List<Book> restBooks = books.stream()
@@ -43,6 +45,11 @@ public class RestBookController implements BooksApi {
 	}
 
 	@Override
+    @PostMapping(
+            value = "/rentBook",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
 	public ResponseEntity<RentBookResponse> rentBook(RentBookRequest rentBookRequest) {
 		try {
 			com.example.data.model.entity.Book rentedBook = bookService.rentBook(rentBookRequest);
@@ -65,6 +72,11 @@ public class RestBookController implements BooksApi {
 	}
 
 	@Override
+    @PostMapping(
+            value = "/returnBook",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
 	public ResponseEntity<ReturnBookResponse> returnBook(ReturnBookRequest returnBookRequest) {
 		try {
 			com.example.data.model.entity.Book returnedBook = bookService.returnBook(returnBookRequest);

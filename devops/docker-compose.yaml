@@ -1,19 +1,14 @@
 services:
-  db:
+  db_modul450:
+    image: postgres:16-alpine
     restart: unless-stopped
-    image: postgres:17-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: M450_db
+      TZ: UTC
     healthcheck:
-      test:
-        - CMD-SHELL
-        - pg_isready
-        - -d
-        - M450_db
-        - -U
-        - postgres
+      test: ["CMD-SHELL", "pg_isready -d M450_db -U postgres"]
       interval: 10s
       timeout: 30s
       retries: 5
@@ -22,6 +17,5 @@ services:
       - "5432:5432"
     volumes:
       - data:/var/lib/postgresql/data
-
 volumes:
   data:

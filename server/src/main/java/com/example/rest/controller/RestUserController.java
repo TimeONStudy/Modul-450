@@ -11,6 +11,8 @@ import com.example.service.BookService;
 import com.example.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -24,13 +26,15 @@ public class RestUserController implements UsersApi {
 	private final BookService bookService;
 
 	@Override
-	public ResponseEntity<User> getUserById(String userId) {
+    @GetMapping("/getUserById/{userId}")
+	public ResponseEntity<User> getUserById(@PathVariable String userId) {
 		com.example.data.model.entity.User user = userService.getUserById(userId);
 		return ResponseEntity.ok(UserMapper.toRest(user));
 	}
 
 	@Override
-	public ResponseEntity<BookList> getUserRentedBooks(String userId) {
+    @GetMapping("/getUserRentedBooks/{userId}")
+	public ResponseEntity<BookList> getUserRentedBooks(@PathVariable String userId) {
 		List<Book> rentedBooks = bookService.getUserRentedBooks(userId);
 		List<com.example.rest.generated.model.Book> restBooks = rentedBooks.stream()
 				.map(BookMapper::toRest)
@@ -43,6 +47,7 @@ public class RestUserController implements UsersApi {
 	}
 
 	@Override
+    @GetMapping("/getUsers")
 	public ResponseEntity<UserList> getUsers() {
 		List<com.example.data.model.entity.User> users = userService.getAllUsers();
 		List<User> restUsers = users.stream()
