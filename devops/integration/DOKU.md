@@ -46,26 +46,68 @@
 **T-DB-01 – Verbindung OK**  
 **Request:** `GET /api/book/getBooks`  
 **Command:**
-curl -i http://localhost:8080/api/book/getBooks
+
+    curl -i http://localhost:8080/api/book/getBooks
+
 **Antwort (HTTP 200):**
-{
-"books": [
-{"id":"b1","name":"1984","author":"Orwell","category":{"id":"cat-1","name":"Novel"},"available":true,"rentedBy":null,"rentedDate":null},
-{"id":"b2","name":"Dune","author":"Herbert","category":{"id":"cat-1","name":"Novel"},"available":false,"rentedBy":null,"rentedDate":null},
-{"id":"b3","name":"Watchmen","author":"Moore","category":{"id":"cat-2","name":"Comics"},"available":true,"rentedBy":null,"rentedDate":null}
-]
-}
-**Erwartet:** 200  
+
+    {
+      "books": [
+        {
+          "id": "b1",
+          "name": "1984",
+          "author": "Orwell",
+          "category": { "id": "cat-1", "name": "Novel" },
+          "available": true,
+          "rentedBy": null,
+          "rentedDate": null
+        },
+        {
+          "id": "b2",
+          "name": "Dune",
+          "author": "Herbert",
+          "category": { "id": "cat-1", "name": "Novel" },
+          "available": false,
+          "rentedBy": null,
+          "rentedDate": null
+        },
+        {
+          "id": "b3",
+          "name": "Watchmen",
+          "author": "Moore",
+          "category": { "id": "cat-2", "name": "Comics" },
+          "available": true,
+          "rentedBy": null,
+          "rentedDate": null
+        }
+      ]
+    }
+
+**Erwartet:** 200 OK und Liste aller Bücher aus dem Seed.  
+**Beobachtung:** 200 OK; drei Bücher (`b1`, `b2`, `b3`) wie im Seed vorhanden.  
 **Mängelklasse:** 0
 
 **T-DB-02 – Seed-Konsistenz (b2)**  
 **Request:** `GET /api/book/getBookById/b2`  
 **Command:**
-curl -i http://localhost:8080/api/book/getBookById/b2
+
+    curl -i http://localhost:8080/api/book/getBookById/b2
+
 **Antwort (HTTP 200):**
-{"id":"b2","name":"Dune","author":"Herbert","category":{"id":"cat-1","name":"Novel"},"available":false,"rentedBy":null,"rentedDate":null}
-**Erwartet:** 200 (fachlich: wenn `available=false` dann `rentedBy != null`)  
-**Mängelklasse:** 2 (fachliche Inkonsistenz sichtbar: vermietet, aber `rentedBy=null`)
+
+    {
+      "id": "b2",
+      "name": "Dune",
+      "author": "Herbert",
+      "category": { "id": "cat-1", "name": "Novel" },
+      "available": false,
+      "rentedBy": null,
+      "rentedDate": null
+    }
+
+**Erwartet:** 200 OK; fachlich: wenn `available=false`, dann `rentedBy != null` (Konsistenz).  
+**Beobachtung:** 200 OK; **Inkonsistenz**: `available=false`, aber `rentedBy=null`.  
+**Mängelklasse:** 2 (fachliche Inkonsistenz sichtbar)
 
 ---
 
@@ -74,70 +116,149 @@ curl -i http://localhost:8080/api/book/getBookById/b2
 **T-TRX-01 – Rent b1 durch u1 (Happy Path)**  
 **Request:** `POST /api/book/rentBook`  
 **Command:**
-curl -i -X POST http://localhost:8080/api/book/rentBook \
--H "Content-Type: application/json" \
--d '{"bookId":"b1","userId":"u1"}'
+
+    curl -i -X POST http://localhost:8080/api/book/rentBook \
+      -H "Content-Type: application/json" \
+      -d '{"bookId":"b1","userId":"u1"}'
+
 **Antwort (HTTP 400):**
-{"success":false,"message":"Could not commit JPA transaction","book":null,"rentedDate":null}
-**Erwartet:** 200 und `available=false`, `rentedBy="u1"`  
+
+    {
+      "success": false,
+      "message": "Could not commit JPA transaction",
+      "book": null,
+      "rentedDate": null
+    }
+
+**Erwartet:** 200 OK; Buchzustand nachher `available=false`, `rentedBy="u1"`, `rentedDate` gesetzt.  
+**Beobachtung:** **400 Bad Request** („Could not commit JPA transaction“); keine Zustandsänderung.  
 **Mängelklasse:** 3 (Transaktion scheitert)
 
 **State-Check b1 nach T-TRX-01**  
 **Request:** `GET /api/book/getBookById/b1`  
 **Command:**
-curl -i http://localhost:8080/api/book/getBookById/b1
+
+    curl -i http://localhost:8080/api/book/getBookById/b1
+
 **Antwort (HTTP 200):**
-{"id":"b1","name":"1984","author":"Orwell","category":{"id":"cat-1","name":"Novel"},"available":true,"rentedBy":null,"rentedDate":null}
-**Bemerkung:** Zustand unverändert (Fehlschlag bestätigt).
+
+    {
+      "id": "b1",
+      "name": "1984",
+      "author": "Orwell",
+      "category": { "id": "cat-1", "name": "Novel" },
+      "available": true,
+      "rentedBy": null,
+      "rentedDate": null
+    }
+
+**Erwartet:** 200 OK; **nach erfolgreichem Rent** wäre erwartet: `available=false`, `rentedBy="u1"`, `rentedDate` gesetzt.  
+**Beobachtung:** 200 OK; `b1` weiterhin `available=true`, `rentedBy=null`.
 
 **T-TRX-02 – Re-rent b2 durch u2 (Konflikt erwartet)**  
 **Request:** `POST /api/book/rentBook`  
 **Command:**
-curl -i -X POST http://localhost:8080/api/book/rentBook \
--H "Content-Type: application/json" \
--d '{"bookId":"b2","userId":"u2"}'
+
+    curl -i -X POST http://localhost:8080/api/book/rentBook \
+      -H "Content-Type: application/json" \
+      -d '{"bookId":"b2","userId":"u2"}'
+
 **Antwort (HTTP 400):**
-{"success":false,"message":"Book is not available for rent","book":null,"rentedDate":null}
-**Erwartet:** 400/409, Zustand unverändert  
+
+    {
+      "success": false,
+      "message": "Book is not available for rent",
+      "book": null,
+      "rentedDate": null
+    }
+
+**Erwartet:** 400/409; Zustand bleibt unverändert.  
+**Beobachtung:** **400 Bad Request** („Book is not available for rent“); Zustand unverändert.  
 **Mängelklasse:** 0 (fachlich korrekt abgelehnt)
 
 **State-Check b2 nach T-TRX-02**  
 **Request:** `GET /api/book/getBookById/b2`  
 **Command:**
-curl -i http://localhost:8080/api/book/getBookById/b2
+
+    curl -i http://localhost:8080/api/book/getBookById/b2
+
 **Antwort (HTTP 200):**
-{"id":"b2","name":"Dune","author":"Herbert","category":{"id":"cat-1","name":"Novel"},"available":false,"rentedBy":null,"rentedDate":null}
-**Bemerkung:** Zustand unverändert (ok).
+
+    {
+      "id": "b2",
+      "name": "Dune",
+      "author": "Herbert",
+      "category": { "id": "cat-1", "name": "Novel" },
+      "available": false,
+      "rentedBy": null,
+      "rentedDate": null
+    }
+
+**Erwartet:** 200 OK; unveränderter Zustand (da Re-rent korrekt abgelehnt).  
+**Beobachtung:** 200 OK; weiterhin `available=false`, `rentedBy=null`.
 
 **T-TRX-03 – Return b2 durch u2 (falscher Nutzer)**  
 **Request:** `POST /api/book/returnBook`  
 **Command:**
-curl -i -X POST http://localhost:8080/api/book/returnBook \
--H "Content-Type: application/json" \
--d '{"bookId":"b2","userId":"u2"}'
+
+    curl -i -X POST http://localhost:8080/api/book/returnBook \
+      -H "Content-Type: application/json" \
+      -d '{"bookId":"b2","userId":"u2"}'
+
 **Antwort (HTTP 400):**
-{"success":false,"message":"Book is rented by a different user","book":null,"returnedDate":null}
-**Erwartet:** 400/401/403  
+
+    {
+      "success": false,
+      "message": "Book is rented by a different user",
+      "book": null,
+      "returnedDate": null
+    }
+
+**Erwartet:** 400/401/403; Zustand bleibt unverändert.  
+**Beobachtung:** **400 Bad Request** („Book is rented by a different user“); Zustand unverändert.  
 **Mängelklasse:** 0 (fachlich korrekt abgelehnt)
 
 **T-TRX-04 – Return b2 durch u1 (Happy Path)**  
 **Request:** `POST /api/book/returnBook`  
 **Command:**
-curl -i -X POST http://localhost:8080/api/book/returnBook \
--H "Content-Type: application/json" \
--d '{"bookId":"b2","userId":"u1"}'
+
+    curl -i -X POST http://localhost:8080/api/book/returnBook \
+      -H "Content-Type: application/json" \
+      -d '{"bookId":"b2","userId":"u1"}'
+
 **Antwort (HTTP 400):**
-{"success":false,"message":"Could not commit JPA transaction","book":null,"returnedDate":null}
-**Erwartet:** 200 und danach `available=true`, `rentedBy=null`  
+
+    {
+      "success": false,
+      "message": "Could not commit JPA transaction",
+      "book": null,
+      "returnedDate": null
+    }
+
+**Erwartet:** 200 OK; danach `available=true`, `rentedBy=null`, `returnedDate` gesetzt.  
+**Beobachtung:** **400 Bad Request** („Could not commit JPA transaction“); keine Zustandsänderung.  
 **Mängelklasse:** 3 (Transaktion scheitert)
 
 **State-Check b2 nach T-TRX-04**  
 **Request:** `GET /api/book/getBookById/b2`  
 **Command:**
-curl -i http://localhost:8080/api/book/getBookById/b2
+
+    curl -i http://localhost:8080/api/book/getBookById/b2
+
 **Antwort (HTTP 200):**
-{"id":"b2","name":"Dune","author":"Herbert","category":{"id":"cat-1","name":"Novel"},"available":false,"rentedBy":null,"rentedDate":null}
-**Bemerkung:** Keine Änderung (Fehlschlag bestätigt).
+
+    {
+      "id": "b2",
+      "name": "Dune",
+      "author": "Herbert",
+      "category": { "id": "cat-1", "name": "Novel" },
+      "available": false,
+      "rentedBy": null,
+      "rentedDate": null
+    }
+
+**Erwartet:** 200 OK; **nach erfolgreichem Return** wäre erwartet: `available=true`, `rentedBy=null`.  
+**Beobachtung:** 200 OK; weiterhin `available=false`, `rentedBy=null`.
 
 ---
 
@@ -146,21 +267,39 @@ curl -i http://localhost:8080/api/book/getBookById/b2
 **T-FE-01 – Not Found (unbekannte Book-ID)**  
 **Request:** `GET /api/book/getBookById/does-not-exist`  
 **Command:**
-curl -i http://localhost:8080/api/book/getBookById/does-not-exist
+
+    curl -i http://localhost:8080/api/book/getBookById/does-not-exist
+
 **Antwort (HTTP 404):**
-{"message":"Book not found with id: does-not-exist","error":"NOT_FOUND"}
-**Erwartet:** 404 + Fehlerkörper  
+
+    {
+      "message": "Book not found with id: does-not-exist",
+      "error": "NOT_FOUND"
+    }
+
+**Erwartet:** 404 Not Found + Fehlerkörper mit Ursache.  
+**Beobachtung:** **404 Not Found** mit Fehlerobjekt; entspricht Erwartung.  
 **Mängelklasse:** 0
 
 **T-FE-02 – Validation (fehlendes `userId` beim Rent)**  
 **Request:** `POST /api/book/rentBook`  
 **Command:**
-curl -i -X POST http://localhost:8080/api/book/rentBook \
--H "Content-Type: application/json" \
--d '{"bookId":"b1"}'
+
+    curl -i -X POST http://localhost:8080/api/book/rentBook \
+      -H "Content-Type: application/json" \
+      -d '{"bookId":"b1"}'
+
 **Antwort (HTTP 400):**
-{"success":false,"message":"The given id must not be null","book":null,"rentedDate":null}
-**Erwartet:** 400  
+
+    {
+      "success": false,
+      "message": "The given id must not be null",
+      "book": null,
+      "rentedDate": null
+    }
+
+**Erwartet:** 400 Bad Request mit Validierungs-/Fehlermeldung.  
+**Beobachtung:** **400 Bad Request** („The given id must not be null“); entspricht Erwartung.  
 **Mängelklasse:** 0
 
 ---
@@ -170,61 +309,167 @@ curl -i -X POST http://localhost:8080/api/book/rentBook \
 **T-CAT-01 – Kategorien**  
 **Request:** `GET /api/category/getCategories`  
 **Command:**
-curl -i http://localhost:8080/api/category/getCategories
+
+    curl -i http://localhost:8080/api/category/getCategories
+
 **Antwort (HTTP 200):**
-{"categories":[{"id":"cat-1","name":"Novel"},{"id":"cat-2","name":"Comics"}]}
+
+    {
+      "categories": [
+        { "id": "cat-1", "name": "Novel" },
+        { "id": "cat-2", "name": "Comics" }
+      ]
+    }
+
+**Erwartet:** 200 OK; Liste aller Kategorien aus dem Seed.  
+**Beobachtung:** **200 OK**; zwei Kategorien (`cat-1`, `cat-2`) wie im Seed.  
 **Mängelklasse:** 0
 
-**T-CAT-02 – Bücher je Kategorie**  
+**T-CAT-02 – Bücher je Kategorie (cat-1)**  
 **Request:** `GET /api/category/getBooksByCategory/cat-1`  
 **Command:**
-curl -i http://localhost:8080/api/category/getBooksByCategory/cat-1
+
+    curl -i http://localhost:8080/api/category/getBooksByCategory/cat-1
+
 **Antwort (HTTP 200):**
-{"books":[
-{"id":"b1","name":"1984","author":"Orwell","category":{"id":"cat-1","name":"Novel"},"available":true,"rentedBy":null,"rentedDate":null},
-{"id":"b2","name":"Dune","author":"Herbert","category":{"id":"cat-1","name":"Novel"},"available":false,"rentedBy":null,"rentedDate":null}
-]}
+
+    {
+      "books": [
+        {
+          "id": "b1",
+          "name": "1984",
+          "author": "Orwell",
+          "category": { "id": "cat-1", "name": "Novel" },
+          "available": true,
+          "rentedBy": null,
+          "rentedDate": null
+        },
+        {
+          "id": "b2",
+          "name": "Dune",
+          "author": "Herbert",
+          "category": { "id": "cat-1", "name": "Novel" },
+          "available": false,
+          "rentedBy": null,
+          "rentedDate": null
+        }
+      ]
+    }
+
+**Erwartet:** 200 OK; Liste aller Bücher mit `categoryId="cat-1"`.  
+**Beobachtung:** **200 OK**; `b1` und `b2` korrekt für `cat-1`, jedoch **Inkonsistenz** bei `b2` (siehe oben).  
+**Mängelklasse:** 0
+
+**T-CAT-02 – Bücher je Kategorie (cat-2)**  
 **Request:** `GET /api/category/getBooksByCategory/cat-2`  
 **Command:**
-curl -i http://localhost:8080/api/category/getBooksByCategory/cat-2
+
+    curl -i http://localhost:8080/api/category/getBooksByCategory/cat-2
+
 **Antwort (HTTP 200):**
-{"books":[{"id":"b3","name":"Watchmen","author":"Moore","category":{"id":"cat-2","name":"Comics"},"available":true,"rentedBy":null,"rentedDate":null}]}
+
+    {
+      "books": [
+        {
+          "id": "b3",
+          "name": "Watchmen",
+          "author": "Moore",
+          "category": { "id": "cat-2", "name": "Comics" },
+          "available": true,
+          "rentedBy": null,
+          "rentedDate": null
+        }
+      ]
+    }
+
+**Erwartet:** 200 OK; Liste aller Bücher mit `categoryId="cat-2"`.  
+**Beobachtung:** **200 OK**; `b3` korrekt für `cat-2`.  
 **Mängelklasse:** 0
 
 **T-USER-01 – Users**  
 **Request:** `GET /api/user/getUsers`  
 **Command:**
-curl -i http://localhost:8080/api/user/getUsers
+
+    curl -i http://localhost:8080/api/user/getUsers
+
 **Antwort (HTTP 200):**
-{"users":[
-{"id":"u1","name":"User One","email":"u1@example.com","authenticated":true},
-{"id":"u2","name":"User Two","email":"u2@example.com","authenticated":true}
-]}
+
+    {
+      "users": [
+        { "id": "u1", "name": "User One", "email": "u1@example.com", "authenticated": true },
+        { "id": "u2", "name": "User Two", "email": "u2@example.com", "authenticated": true }
+      ]
+    }
+
+**Erwartet:** 200 OK; Liste aller Benutzer aus dem Seed.  
+**Beobachtung:** **200 OK**; `u1`, `u2` wie im Seed.  
+**Mängelklasse:** 0
 
 **T-USER-02 – User by ID**  
 **Request:** `GET /api/user/getUserById/u1`  
 **Command:**
-curl -i http://localhost:8080/api/user/getUserById/u1
+
+    curl -i http://localhost:8080/api/user/getUserById/u1
+
 **Antwort (HTTP 200):**
-{"id":"u1","name":"User One","email":"u1@example.com","authenticated":true}
+
+    {
+      "id": "u1",
+      "name": "User One",
+      "email": "u1@example.com",
+      "authenticated": true
+    }
+
+**Erwartet:** 200 OK; Rückgabe des Benutzers mit `id="u1"`.  
+**Beobachtung:** **200 OK**; `u1` korrekt geliefert.  
+**Mängelklasse:** 0
 
 **T-USER-03 – Rented Books by User**  
 **Request:** `GET /api/user/getUserRentedBooks/u1`  
 **Command:**
-curl -i http://localhost:8080/api/user/getUserRentedBooks/u1
+
+    curl -i http://localhost:8080/api/user/getUserRentedBooks/u1
+
 **Antwort (HTTP 200):**
-{"books":[{"id":"b2","name":"Dune","author":"Herbert","category":{"id":"cat-1","name":"Novel"},"available":false,"rentedBy":null,"rentedDate":null}]}
+
+    {
+      "books": [
+        {
+          "id": "b2",
+          "name": "Dune",
+          "author": "Herbert",
+          "category": { "id": "cat-1", "name": "Novel" },
+          "available": false,
+          "rentedBy": null,
+          "rentedDate": null
+        }
+      ]
+    }
+
+**Erwartet:** 200 OK; Liste der Bücher, die aktuell von `u1` gemietet sind (fachlich konsistent: `available=false` und `rentedBy="u1"`).  
+**Beobachtung:** **200 OK**; Liste enthält `b2`, jedoch **Inkonsistenz** im Book-Objekt (`rentedBy=null` statt `"u1"`).  
 **Mängelklasse (User-Teil):** 0
+
 
 ---
 
 ## 5. Zusammenfassung
-| Schwerpunkt | Ergebnis | Bemerkung |
-|---|---|---|
-| Datenbankverbindung | **OK** | Verbindung stabil |
+
+**Ziele:** Nachweis, dass die API mit echter DB konsistent arbeitet, Transaktionen korrekt greifen und Fehlerfälle sauber kommuniziert werden.
+
+| Schwerpunkt | Ergebnis | Bemerkung                                                      |
+|---|---|----------------------------------------------------------------|
+| Datenbankverbindung | **OK** | Verbindung stabil                                              |
 | Transaktionsprüfung/CRUD | **Nicht bestanden** | `rent`/`return` liefern 400 „Could not commit JPA transaction“ |
-| Datenintegrität | **Teilweise nicht bestanden** | b2: `available=false` **aber** `rentedBy=null` |
-| Fehlerbehandlung | **OK** | 404 und Validierung (400) verhalten sich erwartungsgemäß |
+| Datenintegrität | **Teilweise nicht bestanden** | b2: `available=false` **aber** `rentedBy=null`                 |
+| Fehlerbehandlung | **OK** | 404 und Validierung (400) verhalten sich erwartungsgemäss      |
+
+
+**Gewählte Schwerpunkte und Begründung:**
+- **Datenbankverbindung:** Grundvoraussetzung für alle Integrationspfade; prüft Connectivity, Schema/Seed und Treiberkonfiguration.
+- **Transaktionsprüfung/CRUD:** Kern der Business-Funktion (Ausleihe/Rückgabe); prüft atomare Änderungen und Rollbacks bei Fehlern.
+- **Datenintegrität:** Sicherstellt fachliche Konsistenz (z. B. `available` ↔ `rentedBy`); verhindert schleichende Datenfehler.
+- **Fehlerbehandlung:** Erwartete HTTP-Codes/Fehlermeldungen, damit Clients deterministisch reagieren können.
 
 ---
 
